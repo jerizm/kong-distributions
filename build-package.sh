@@ -17,13 +17,15 @@ OPTIONS:
  -k      Kong version to build
  -p      Platforms to target
  -t      Execute tests
+ -r      Kong Fork Repo to pull from
 EOF
 }
 
 ARG_PLATFORMS=
 KONG_VERSION=
+KONG_REPO=Mashape
 TEST=false
-while getopts “hk:p:t” OPTION
+while getopts “hk:r:p:t” OPTION
 do
   case $OPTION in
     h)
@@ -39,6 +41,9 @@ do
     t)
       TEST=true
       ;;
+    r)
+      KONG_REPO=$OPTARG
+      ;;
     ?)
       usage
       exit
@@ -46,7 +51,7 @@ do
   esac
 done
 
-if [[ -z $ARG_PLATFORMS ]] || [[ -z $KONG_VERSION ]]; then
+if [[ -z $ARG_PLATFORMS ]] || [[ -z $KONG_VERSION ]] || [[ -z $KONG_REPO ]]; then
   usage
   exit 1
 fi
@@ -82,7 +87,7 @@ if [ ${#platforms_to_build[@]} -eq 0 ]; then
   exit 1
 fi
 
-echo "Building Kong $KONG_VERSION: "$( IFS=$'\n'; echo "${platforms_to_build[*]}" )
+echo "Building Kong $KONG_REPO/$KONG_VERSION: "$( IFS=$'\n'; echo "${platforms_to_build[*]}" )
 
 ##############################################################
 #                        Start Build                         #
@@ -103,9 +108,9 @@ for i in "${platforms_to_build[@]}"
 do
   echo "Building for $i"
   if [[ "$i" == "osx" ]]; then
-    /bin/bash $DIR/.build-package-script.sh ${KONG_VERSION}
+    /bin/bash $DIR/.build-package-script.sh ${KONG_VERSION} ${KONG_REPO}
   else
-    docker run -v $DIR/:/build-data $i /bin/bash -c "/build-data/.build-package-script.sh ${KONG_VERSION}"
+    docker run -v $DIR/:/build-data $i /bin/bash -c "/build-data/.build-package-script.sh ${KONG_VERSION} ${KONG_REPO}"
   fi
   if [ $? -ne 0 ]; then
     exit 1
